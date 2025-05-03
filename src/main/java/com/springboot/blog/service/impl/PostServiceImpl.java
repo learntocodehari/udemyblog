@@ -1,5 +1,6 @@
 package com.springboot.blog.service.impl;
 
+import com.springboot.blog.entity.Comment;
 import com.springboot.blog.entity.Post;
 import com.springboot.blog.exception.ResourceNotFoundException;
 import com.springboot.blog.payload.PostDto;
@@ -14,14 +15,13 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class PostServiceImpl implements PostService {
 
     // constructor based dependency injection
-    private PostRepository postRepository;
-    private ModelMapper modelMapper;
+    private final PostRepository postRepository;
+    private final ModelMapper modelMapper;
 
     public PostServiceImpl(PostRepository postRepository, ModelMapper modelMapper) {
         this.postRepository = postRepository;
@@ -35,18 +35,20 @@ public class PostServiceImpl implements PostService {
         Post post = mapToEntity(postDto);
         Post newPost = postRepository.save(post);
 
-        // convert entity to dto
-        PostDto postResponse = mapToDto(newPost);
-        return postResponse;
+        // convert entity to dto and return
+        return mapToDto(newPost);
     }
 
     @Override
     public PostResponse getAllPosts(int pageNumber, int pageSize, String sortBy, String sortDir) {
 
         // create pageable instance
-        //  Pageable pageable = PageRequest.of(pageNumber, pageSize);
-        // Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy));
-        //  Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
+      /**
+       *
+       *     Pageable pageable = PageRequest.of(pageNumber, pageSize);
+       *          Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy));
+       *           Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
+       * */
 
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
                 ? Sort.by(sortBy).ascending()
@@ -59,7 +61,7 @@ public class PostServiceImpl implements PostService {
         // get content for page object
         List<Post> listOfPosts = posts.getContent();
 
-        List<PostDto> content = listOfPosts.stream().map(post -> mapToDto(post)).collect(Collectors.toList());
+        List<PostDto> content = listOfPosts.stream().map(this::mapToDto).toList();
 
         PostResponse postResponse = new PostResponse();
         postResponse.setContent(content);
@@ -99,27 +101,23 @@ public class PostServiceImpl implements PostService {
     }
 
     private PostDto mapToDto(Post post) {
-        // convert entity to dto
-        PostDto postDto = modelMapper.map(post, PostDto.class);
+        // convert entity to dto and return
 
-//        PostDto postDto = new PostDto();
-//        postDto.setId(post.getId());
-//        postDto.setTitle(post.getTitle());
-//        postDto.setDescription(post.getDescription());
-//        postDto.setContent(post.getContent());
-
-        return postDto;
+        return modelMapper.map(post, PostDto.class);
     }
 
     private Post mapToEntity(PostDto postDto) {
-        // convert dto to entity
+        // Convert dto to entity
         Post post = modelMapper.map(postDto, Post.class);
-//        Post post = new Post();
-//        post.setId(postDto.getId());
-//        post.setTitle(postDto.getTitle());
-//        post.setDescription(postDto.getDescription());
-//        post.setContent(postDto.getContent());
+
+        // 🔁 Fix the back-reference for each comment
+        if (post.getComments() != null) {
+            for (Comment comment : post.getComments()) {
+                comment.setPost(post);  // ✅ Crucial step
+            }
+        }
 
         return post;
     }
+
 }

@@ -29,7 +29,7 @@ public class Post {
     @Column(name = "content", nullable = false)
     private String content;
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
     // this post is present in Comment entity
     // CascadeType.ALL -> whenever we save parent then it's child will automatically will be saved
     // orphanRemoval = true -> whenever we remove the parent then it's child will be also removed.
